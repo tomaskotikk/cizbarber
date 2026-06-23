@@ -41,6 +41,27 @@ const formatTime = (value: string) =>
     minute: "2-digit",
   }).format(new Date(value));
 
+const monthLabel = (date: Date) =>
+  new Intl.DateTimeFormat("cs-CZ", {
+    month: "long",
+    year: "numeric",
+  }).format(date);
+
+const dateKey = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+const createCalendarDays = (month: Date) => {
+  const firstDay = new Date(month.getFullYear(), month.getMonth(), 1);
+  const mondayOffset = (firstDay.getDay() + 6) % 7;
+  const calendarStart = new Date(month.getFullYear(), month.getMonth(), 1 - mondayOffset);
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const day = new Date(calendarStart);
+    day.setDate(calendarStart.getDate() + index);
+    return day;
+  });
+};
+
 export default function BookingFlow({
   initialServices,
   initialSlots,
@@ -55,6 +76,10 @@ export default function BookingFlow({
   const [barber, setBarber] = useState("");
   const [slotId, setSlotId] = useState("");
   const [selectedDay, setSelectedDay] = useState("");
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -70,17 +95,27 @@ export default function BookingFlow({
     [slots, barber],
   );
 
-  const days = useMemo(
-    () => Array.from(new Set(relevantSlots.map((item) => formatDayKey(item.starts_at)))).slice(0, 14),
-    [relevantSlots],
-  );
+  const slotsByDay = useMemo(() => {
+    const grouped = new Map<string, Slot[]>();
+    relevantSlots.forEach((item) => {
+      const key = formatDayKey(item.starts_at);
+      grouped.set(key, [...(grouped.get(key) ?? []), item]);
+    });
+    return grouped;
+  }, [relevantSlots]);
+
+  const calendarDays = useMemo(() => createCalendarDays(visibleMonth), [visibleMonth]);
 
   const daySlots = useMemo(
-    () => relevantSlots.filter((item) => formatDayKey(item.starts_at) === selectedDay),
-    [relevantSlots, selectedDay],
+    () => (slotsByDay.get(selectedDay) ?? []).sort((a, b) => a.starts_at.localeCompare(b.starts_at)),
+    [slotsByDay, selectedDay],
   );
 
   const currentIndex = stepOrder.indexOf(step);
+  const currentMonth = new Date();
+  currentMonth.setDate(1);
+  currentMonth.setHours(0, 0, 0, 0);
+  const canGoToPreviousMonth = visibleMonth > currentMonth;
 
   const selectService = (id: string) => {
     setServiceId(id);
@@ -91,7 +126,12 @@ export default function BookingFlow({
     setBarber(name);
     setSlotId("");
     const available = slots.filter((item) => item.barber_name === name);
-    setSelectedDay(available[0] ? formatDayKey(available[0].starts_at) : "");
+    const firstAvailable = available[0];
+    setSelectedDay("");
+    if (firstAvailable) {
+      const firstDate = new Date(firstAvailable.starts_at);
+      setVisibleMonth(new Date(firstDate.getFullYear(), firstDate.getMonth(), 1));
+    }
     setStep("time");
   };
 
@@ -230,39 +270,116 @@ export default function BookingFlow({
                 transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
               >
                 <span className="section-kicker">Krok 3 ze 4</span>
-                <h1>Vyber čas</h1>
+                <h1>Vyber den a čas</h1>
                 <div className="calendar-shell">
-                  <div className="calendar-days">
-                    {days.map((day) => (
+                  <div className="calendar-toolbar">
+                    <div>
+                      <span>Dostupnost</span>
+                      <strong>{monthLabel(visibleMonth)}</strong>
+                    </div>
+                    <div className="calendar-navigation">
                       <button
-                        className={selectedDay === day ? "day-button active" : "day-button"}
                         type="button"
+                        aria-label="Předchozí měsíc"
+                        disabled={!canGoToPreviousMonth}
                         onClick={() => {
-                          setSelectedDay(day);
+                          setVisibleMonth((month) => new Date(month.getFullYear(), month.getMonth() - 1, 1));
+                          setSelectedDay("");
                           setSlotId("");
                         }}
-                        key={day}
                       >
-                        {formatDay(day)}
+                        ←
                       </button>
-                    ))}
+                      <button
+                        type="button"
+                        aria-label="Další měsíc"
+                        onClick={() => {
+                          setVisibleMonth((month) => new Date(month.getFullYear(), month.getMonth() + 1, 1));
+                          setSelectedDay("");
+                          setSlotId("");
+                        }}
+                      >
+                        →
+                      </button>
+                    </div>
                   </div>
-                  <div className="time-grid">
-                    {daySlots.length ? (
-                      daySlots.map((item) => (
+
+                  <div className="calendar-legend">
+                    <span><i className="available" /> Volný termín</span>
+                    <span><i className="unavailable" /> Bez termínu</span>
+                  </div>
+
+                  <div className="calendar-weekdays" aria-hidden="true">
+                    {["Po", "Út", "St", "Čt", "Pá", "So", "Ne"].map((day) => <span key={day}>{day}</span>)}
+                  </div>
+
+                  <div className="calendar-grid">
+                    {calendarDays.map((day) => {
+                      const key = dateKey(day);
+                      const availableCount = slotsByDay.get(key)?.length ?? 0;
+                      const isCurrentMonth = day.getMonth() === visibleMonth.getMonth();
+                      const isSelected = selectedDay === key;
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const isPast = day < today;
+                      const isAvailable = isCurrentMonth && !isPast && availableCount > 0;
+
+                      return (
                         <button
-                          className={slotId === item.id ? "time-button active" : "time-button"}
+                          className={[
+                            "calendar-day",
+                            !isCurrentMonth ? "outside" : "",
+                            isPast ? "past" : "",
+                            isAvailable ? "available" : "unavailable",
+                            isSelected ? "selected" : "",
+                          ].filter(Boolean).join(" ")}
                           type="button"
-                          onClick={() => setSlotId(item.id)}
-                          key={item.id}
+                          disabled={!isAvailable}
+                          onClick={() => {
+                            setSelectedDay(key);
+                            setSlotId("");
+                          }}
+                          key={key}
                         >
-                          {formatTime(item.starts_at)}
+                          <span>{day.getDate()}</span>
+                          {isAvailable ? <small>{availableCount} {availableCount === 1 ? "čas" : "časy"}</small> : null}
                         </button>
-                      ))
-                    ) : (
-                      <div className="empty-state">V tento den nejsou žádné volné časy.</div>
-                    )}
+                      );
+                    })}
                   </div>
+
+                  <AnimatePresence mode="wait">
+                    {selectedDay && daySlots.length ? (
+                      <motion.div
+                        className="calendar-times"
+                        key={selectedDay}
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                      >
+                        <div className="calendar-times-heading">
+                          <div>
+                            <span>Volné časy</span>
+                            <strong>{formatDay(selectedDay)}</strong>
+                          </div>
+                          <small>Vyber jeden termín</small>
+                        </div>
+                        <div className="time-grid">
+                          {daySlots.map((item) => (
+                            <button
+                              className={slotId === item.id ? "time-button active" : "time-button"}
+                              type="button"
+                              onClick={() => setSlotId(item.id)}
+                              key={item.id}
+                            >
+                              {formatTime(item.starts_at)}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
                 </div>
                 <button className="button booking-continue" type="button" disabled={!slotId} onClick={() => setStep("details")}>
                   Pokračovat
