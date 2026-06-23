@@ -118,7 +118,7 @@ export default function AdminPanel() {
     <main className="admin-page">
       <header className="admin-header">
         <div>
-          <span className="eyebrow">Cíž Barber</span>
+          <span className="eyebrow">Číž Barber</span>
           <h1>Admin termíny</h1>
         </div>
         <div className="admin-actions">
@@ -160,7 +160,7 @@ export default function AdminPanel() {
           </div>
           <div className="field">
             <label htmlFor="barber_name">Barber</label>
-            <input id="barber_name" name="barber_name" defaultValue="Cíž" required />
+            <input id="barber_name" name="barber_name" defaultValue="Číž" required />
           </div>
           <div className="field">
             <label htmlFor="note">Interní poznámka</label>

@@ -70,7 +70,7 @@ export default function HomeClient({ initialServices }: { initialServices: Servi
     <main className="site-shell">
       <motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} />
       <nav className="nav">
-        <a className="brand" href="#"><span className="brand-mark">CŽ</span><span>Cíž Barber</span></a>
+        <a className="brand" href="#"><span className="brand-mark">ČŽ</span><span>Číž Barber</span></a>
         <div className="nav-links">
           <a href="#sluzby">Služby</a><a href="#atelier">Ateliér</a><a href="#recenze">Recenze</a><a href="#kontakt">Kontakt</a>
         </div>
@@ -80,7 +80,7 @@ export default function HomeClient({ initialServices }: { initialServices: Servi
       <section className="hero" ref={heroRef}>
         <motion.div className="hero-copy" style={{ y: heroCopyY, opacity: heroCopyOpacity }}>
           <motion.span className="eyebrow" initial="hidden" animate="visible" variants={reveal} transition={{ duration: 1.25, ease: [0.16, 1, 0.3, 1] }}>
-            Barber shop / Ostrava / Od 2026
+            Barber shop / Zlín / Od 2026
           </motion.span>
           <motion.h1 initial="hidden" animate="visible" variants={reveal} transition={{ duration: 1.45, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}>
             Číž<br />Barber
@@ -215,7 +215,7 @@ export default function HomeClient({ initialServices }: { initialServices: Servi
       </section>
 
       <section className="section contact-section" id="kontakt">
-        <span className="section-kicker">Kontakt</span><h2>Najdeš nás v centru Ostravy.</h2>
+        <span className="section-kicker">Kontakt</span><h2>Najdeš nás v centru Zlína.</h2>
         <div className="contact">
           <a className="contact-item" href="tel:+420777000000"><span>Telefon</span><strong>+420 777 000 000</strong></a>
           <a className="contact-item" href="https://instagram.com" target="_blank" rel="noreferrer"><span>Instagram</span><strong>@cizbarber</strong></a>
@@ -223,7 +223,7 @@ export default function HomeClient({ initialServices }: { initialServices: Servi
         </div>
       </section>
 
-      <footer className="footer"><strong>Cíž Barber</strong><span>© 2026 Všechna práva vyhrazena</span><a href="/admin">Admin</a></footer>
+      <footer className="footer"><strong>Číž Barber</strong><span>© 2026 Všechna práva vyhrazena</span><a href="/admin">Admin</a></footer>
     </main>
   );
 }

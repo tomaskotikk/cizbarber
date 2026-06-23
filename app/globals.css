@@ -72,12 +72,15 @@ button {
 
 .site-shell {
   min-height: 100vh;
+  padding-top: 77px;
   overflow: hidden;
 }
 
 .nav {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  width: 100%;
   z-index: 30;
   display: flex;
   align-items: center;
@@ -208,11 +211,11 @@ button {
 
 .hero h1 {
   max-width: 960px;
-  margin: 18px 0 22px;
+  margin: 38px 0 22px;
   font-size: clamp(66px, 12vw, 176px);
   font-weight: 920;
   letter-spacing: -0.075em;
-  line-height: 0.82;
+  line-height: 0.9;
 }
 
 .hero p {
@@ -1121,7 +1124,7 @@ button {
 }
 
 .hero h1 {
-  letter-spacing: -0.06em;
+  letter-spacing: -0.045em;
 }
 
 .hero-visual {

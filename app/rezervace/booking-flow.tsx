@@ -141,7 +141,7 @@ export default function BookingFlow({
           ←
         </button>
         <a className="booking-brand" href="/">
-          číž Barber
+          Číž Barber
         </a>
         <a className="round-control" href="/" aria-label="Zavřít">
           ×
@@ -331,7 +331,7 @@ export default function BookingFlow({
             <span>CŽ</span>
             <div>
               <strong>Číž Barber</strong>
-              <small>Ostrava</small>
+              <small>Zlín</small>
             </div>
           </div>
           <div className="summary-lines">

@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     .insert({
       starts_at: startsAt.toISOString(),
       ends_at: endsAt.toISOString(),
-      barber_name: String(body.barber_name || "Cíž").trim(),
+      barber_name: String(body.barber_name || "Číž").trim(),
       note: String(body.note || "").trim() || null,
       is_available: true,
     })

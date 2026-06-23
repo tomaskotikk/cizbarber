@@ -1,4 +1,4 @@
-# Cíž Barber
+# Číž Barber
 
 Moderní Next.js web pro barber shop s vlastním rezervačním systémem přes Supabase.
 

@@ -14,12 +14,19 @@ create table if not exists public.availability_slots (
   id uuid primary key default gen_random_uuid(),
   starts_at timestamptz not null,
   ends_at timestamptz not null,
-  barber_name text not null default 'Cíž',
+  barber_name text not null default 'Číž',
   is_available boolean not null default true,
   note text,
   created_at timestamptz not null default now(),
   check (ends_at > starts_at)
 );
+
+alter table public.availability_slots
+  alter column barber_name set default 'Číž';
+
+update public.availability_slots
+set barber_name = 'Číž'
+where lower(barber_name) in ('cíž', 'číz', 'číž');
 
 create table if not exists public.bookings (
   id uuid primary key default gen_random_uuid(),
@@ -80,7 +87,7 @@ on conflict do nothing;
 
 insert into public.availability_slots (starts_at, ends_at, barber_name, note)
 values
-  (now() + interval '1 day' + interval '10 hours', now() + interval '1 day' + interval '11 hours', 'Cíž', 'Seed termín'),
-  (now() + interval '2 days' + interval '13 hours', now() + interval '2 days' + interval '14 hours', 'Cíž', 'Seed termín'),
+  (now() + interval '1 day' + interval '10 hours', now() + interval '1 day' + interval '11 hours', 'Číž', 'Seed termín'),
+  (now() + interval '2 days' + interval '13 hours', now() + interval '2 days' + interval '14 hours', 'Číž', 'Seed termín'),
   (now() + interval '3 days' + interval '15 hours', now() + interval '3 days' + interval '16 hours', 'Matěj', 'Seed termín')
 on conflict do nothing;

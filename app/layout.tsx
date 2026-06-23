@@ -8,8 +8,8 @@ import "@fontsource/red-hat-display/900.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Cíž Barber | Moderní barber shop",
-  description: "Rezervace střihu, vousů a kompletní péče v Cíž Barber.",
+  title: "Číž Barber | Moderní barber shop ve Zlíně",
+  description: "Rezervace střihu, vousů a kompletní péče v Číž Barber ve Zlíně.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
