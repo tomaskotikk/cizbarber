@@ -51,7 +51,6 @@ export default function LoginForm() {
       <button className="button" type="submit" disabled={isLoading}>
           {isLoading ? "Kontroluju..." : "Přihlásit"}
       </button>
-      <a className="login-helper-link" href="/setup">Založit první účet</a>
       <p className="status error">{error}</p>
     </form>
   );
