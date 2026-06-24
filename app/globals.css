@@ -463,7 +463,7 @@ button {
 .atelier-section {
   display: grid;
   gap: 38px;
-  background: var(--ink);
+  background: #212325;
   color: var(--paper);
 }
 
