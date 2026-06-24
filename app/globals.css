@@ -6,8 +6,8 @@
   --paper: #f4f4f2;
   --cream: #ffffff;
   --line: rgba(58, 61, 64, 0.13);
-  --accent: #7b8087;
-  --accent-dark: #5f646b;
+  --accent: #b81d1d;
+  --accent-dark: #440000;
   --copper: #9a9da1;
   --red: #a5342a;
   --green: #2e704c;
@@ -1701,7 +1701,7 @@ button {
 
 .rating-lockup span,
 .review-stars {
-  color: var(--accent-dark);
+  color: rgb(172, 172, 24);
   letter-spacing: 0.08em;
 }
 
