@@ -3,7 +3,7 @@ import { updateSession } from "@/utils/supabase/middleware";
 
 export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/admin")) {
-    const isLoggedIn = request.cookies.get("ciz_admin")?.value === "ok";
+    const isLoggedIn = Boolean(request.cookies.get("ciz_user_id")?.value);
 
     if (!isLoggedIn) {
       const loginUrl = request.nextUrl.clone();

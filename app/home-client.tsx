@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useScroll, useSpring, useTransform } from "framer-motion";
+import { Menu, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Service = {
@@ -41,6 +42,7 @@ export default function HomeClient({ initialServices }: { initialServices: Servi
   const [activePhoto, setActivePhoto] = useState(0);
   const [activeCategory, setActiveCategory] = useState("Vše");
   const [openService, setOpenService] = useState<string | null>(initialServices[0]?.id ?? null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
   const atelierRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll();
@@ -71,10 +73,19 @@ export default function HomeClient({ initialServices }: { initialServices: Servi
       <motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} />
       <nav className="nav">
         <a className="brand" href="#"><span className="brand-mark">ČŽ</span><span>Číž Barber</span></a>
-        <div className="nav-links">
-          <a href="#sluzby">Služby</a><a href="#atelier">Ateliér</a><a href="#recenze">Recenze</a><a href="#kontakt">Kontakt</a>
+        <div className={mobileMenuOpen ? "nav-links open" : "nav-links"}>
+          <a href="#sluzby" onClick={() => setMobileMenuOpen(false)}>Služby</a>
+          <a href="#atelier" onClick={() => setMobileMenuOpen(false)}>Ateliér</a>
+          <a href="#recenze" onClick={() => setMobileMenuOpen(false)}>Recenze</a>
+          <a href="#kontakt" onClick={() => setMobileMenuOpen(false)}>Kontakt</a>
         </div>
-        <a className="button nav-cta" href="/rezervace">Rezervovat</a>
+        <div className="nav-actions">
+          <a className="button nav-cta" href="/rezervace">Rezervovat</a>
+          <a className="nav-user" href="/login" aria-label="Přihlášení barbera"><UserRound size={19} /></a>
+          <button className="nav-menu-button" type="button" onClick={() => setMobileMenuOpen((open) => !open)} aria-label="Otevřít menu" aria-expanded={mobileMenuOpen}>
+            {mobileMenuOpen ? <X size={21} /> : <Menu size={21} />}
+          </button>
+        </div>
       </nav>
 
       <section className="hero" ref={heroRef}>
@@ -217,9 +228,10 @@ export default function HomeClient({ initialServices }: { initialServices: Servi
       <section className="section contact-section" id="kontakt">
         <span className="section-kicker">Kontakt</span><h2>Najdeš nás v centru Zlína.</h2>
         <div className="contact">
-          <a className="contact-item" href="tel:+420777000000"><span>Telefon</span><strong>+420 777 000 000</strong></a>
-          <a className="contact-item" href="https://instagram.com" target="_blank" rel="noreferrer"><span>Instagram</span><strong>@cizbarber</strong></a>
-          <div className="contact-item"><span>Otevírací doba</span><strong>Po–Pá / 9–19</strong></div>
+          <a className="contact-item" href="tel:+420702155123"><span>Telefon</span><strong>702 155 123</strong></a>
+          <a className="contact-item" href="mailto:cizkuba07@gmail.com"><span>E-mail</span><strong>cizkuba07@gmail.com</strong></a>
+          <a className="contact-item" href="https://instagram.com/J.ciz" target="_blank" rel="noreferrer"><span>Instagram</span><strong>@J.ciz</strong></a>
+          <div className="contact-item"><span>Rezervace</span><strong>Po–Pá / 8:00–17:00</strong></div>
         </div>
       </section>
 

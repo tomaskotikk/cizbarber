@@ -15,7 +15,17 @@ type Slot = {
   id: string;
   starts_at: string;
   ends_at: string;
+  barber_user_id: string | null;
   barber_name: string;
+  users?: Barber | null;
+};
+
+type Barber = {
+  id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  profile_image_url: string | null;
 };
 
 type Step = "service" | "barber" | "time" | "details" | "done";
@@ -65,15 +75,17 @@ const createCalendarDays = (month: Date) => {
 export default function BookingFlow({
   initialServices,
   initialSlots,
+  initialBarbers,
 }: {
   initialServices: Service[];
   initialSlots: Slot[];
+  initialBarbers: Barber[];
 }) {
   const [step, setStep] = useState<Step>("service");
   const [services] = useState(initialServices);
   const [slots, setSlots] = useState(initialSlots);
   const [serviceId, setServiceId] = useState("");
-  const [barber, setBarber] = useState("");
+  const [barberId, setBarberId] = useState("");
   const [slotId, setSlotId] = useState("");
   const [selectedDay, setSelectedDay] = useState("");
   const [visibleMonth, setVisibleMonth] = useState(() => {
@@ -85,14 +97,14 @@ export default function BookingFlow({
 
   const service = services.find((item) => item.id === serviceId);
   const slot = slots.find((item) => item.id === slotId);
-  const barbers = useMemo(
-    () => Array.from(new Set(slots.map((item) => item.barber_name))).filter(Boolean),
-    [slots],
-  );
+  const barbers = useMemo(() => {
+    const activeIds = new Set(slots.map((item) => item.barber_user_id).filter(Boolean));
+    return initialBarbers.filter((barber) => activeIds.has(barber.id));
+  }, [initialBarbers, slots]);
 
   const relevantSlots = useMemo(
-    () => slots.filter((item) => !barber || item.barber_name === barber),
-    [slots, barber],
+    () => slots.filter((item) => !barberId || item.barber_user_id === barberId),
+    [slots, barberId],
   );
 
   const slotsByDay = useMemo(() => {
@@ -122,10 +134,12 @@ export default function BookingFlow({
     setStep("barber");
   };
 
-  const selectBarber = (name: string) => {
-    setBarber(name);
+  const selectedBarber = barbers.find((item) => item.id === barberId);
+
+  const selectBarber = (id: string) => {
+    setBarberId(id);
     setSlotId("");
-    const available = slots.filter((item) => item.barber_name === name);
+    const available = slots.filter((item) => item.barber_user_id === id);
     const firstAvailable = available[0];
     setSelectedDay("");
     if (firstAvailable) {
@@ -239,17 +253,17 @@ export default function BookingFlow({
                 <h1>Vyber barbera</h1>
                 <div className="barber-grid">
                   {barbers.length ? (
-                    barbers.map((name, index) => (
-                      <button className="barber-choice" type="button" onClick={() => selectBarber(name)} key={name}>
+                    barbers.map((barber, index) => (
+                      <button className="barber-choice" type="button" onClick={() => selectBarber(barber.id)} key={barber.id}>
                         <span
                           className="barber-avatar"
                           style={{
-                            backgroundImage: `url(${heroPhotosForBarbers[index % heroPhotosForBarbers.length]})`,
+                            backgroundImage: `url(${barber.profile_image_url || heroPhotosForBarbers[index % heroPhotosForBarbers.length]})`,
                           }}
                         />
                         <span>
-                          <strong>{name}</strong>
-                          <small>Nejbližší dostupný termín</small>
+                          <strong>{barber.full_name}</strong>
+                          <small>{barber.phone || "Nejbližší dostupný termín"}</small>
                         </span>
                       </button>
                     ))
@@ -458,7 +472,7 @@ export default function BookingFlow({
             </div>
             <div>
               <span>Barber</span>
-              <strong>{barber || "Zatím nevybráno"}</strong>
+              <strong>{selectedBarber?.full_name || "Zatím nevybráno"}</strong>
             </div>
             <div>
               <span>Termín</span>

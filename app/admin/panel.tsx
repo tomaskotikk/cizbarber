@@ -27,9 +27,11 @@ type Slot = {
   id: string;
   starts_at: string;
   ends_at: string;
+  barber_user_id: string | null;
   barber_name: string;
   is_available: boolean;
   note: string | null;
+  users?: Barber | null;
   bookings?: Array<{
     customer_name: string;
     customer_phone: string;
@@ -37,6 +39,17 @@ type Slot = {
     note: string | null;
     services?: { name: string } | null;
   }>;
+};
+
+type Barber = {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  profile_image_url: string | null;
+  role: "owner" | "barber";
+  can_invite: boolean;
+  is_active: boolean;
 };
 
 type Filter = "all" | "available" | "booked";
@@ -58,11 +71,14 @@ const formatTime = (value: string) =>
 export default function AdminPanel() {
   const router = useRouter();
   const [slots, setSlots] = useState<Slot[]>([]);
+  const [barbers, setBarbers] = useState<Barber[]>([]);
+  const [currentUser, setCurrentUser] = useState<Barber | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [hasServiceKey, setHasServiceKey] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [isCreatingBarber, setIsCreatingBarber] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -80,6 +96,8 @@ export default function AdminPanel() {
     }
 
     setSlots(result.slots || []);
+    setBarbers(result.barbers || []);
+    setCurrentUser(result.user || null);
     setHasServiceKey(Boolean(result.hasAdminServiceKey));
     setIsLoading(false);
   };
@@ -105,7 +123,7 @@ export default function AdminPanel() {
         (filter === "booked" && Boolean(booking));
       const matchesQuery =
         !normalizedQuery ||
-        [slot.barber_name, slot.note, booking?.customer_name, booking?.customer_phone, booking?.services?.name]
+        [slot.users?.full_name, slot.barber_name, slot.note, booking?.customer_name, booking?.customer_phone, booking?.services?.name]
           .filter(Boolean)
           .some((value) => value!.toLocaleLowerCase("cs").includes(normalizedQuery));
 
@@ -136,6 +154,32 @@ export default function AdminPanel() {
 
     formElement.reset();
     setMessage("Nový termín byl přidán.");
+    await loadSlots();
+  };
+
+  const createBarber = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setMessage("");
+    setError("");
+    setIsCreatingBarber(true);
+
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const response = await fetch("/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.fromEntries(form.entries())),
+    });
+    const result = await response.json();
+    setIsCreatingBarber(false);
+
+    if (!response.ok) {
+      setError(result.error || "Barbera se nepodařilo vytvořit.");
+      return;
+    }
+
+    formElement.reset();
+    setMessage("Barber byl přidán.");
     await loadSlots();
   };
 
@@ -214,8 +258,8 @@ export default function AdminPanel() {
             >
               <span>ČŽ</span>
               <div>
-                <strong>Administrator</strong>
-                <small>admin</small>
+                <strong>{currentUser?.full_name || "Administrator"}</strong>
+                <small>{currentUser?.email || "admin"}</small>
               </div>
               <ChevronDown size={14} />
             </button>
@@ -224,8 +268,8 @@ export default function AdminPanel() {
                 <div className="admin-profile-heading">
                   <span>ČŽ</span>
                   <div>
-                    <strong>Administrator</strong>
-                    <small>Číž Barber</small>
+                    <strong>{currentUser?.full_name || "Administrator"}</strong>
+                    <small>{currentUser?.email || "Číž Barber"}</small>
                   </div>
                 </div>
                 <div className="admin-profile-role">
@@ -256,7 +300,7 @@ export default function AdminPanel() {
           <a href="#prehled"><LayoutDashboard size={17} /><span>Přehled</span></a>
           <a className="active" href="#terminy"><CalendarDays size={17} /><span>Termíny</span><b>{stats.all}</b></a>
           <a href="#novy-termin"><Plus size={17} /><span>Nový termín</span></a>
-          <a href="#klienti"><UsersRound size={17} /><span>Klienti</span></a>
+            <a href="#barberi"><UsersRound size={17} /><span>Barbeři</span><b>{barbers.length}</b></a>
         </nav>
 
         <div className="admin-nav-section">
@@ -269,7 +313,7 @@ export default function AdminPanel() {
 
         <div className="admin-sidebar-footer">
           <CircleUserRound size={18} />
-          <div><strong>Administrator</strong><small>admin</small></div>
+          <div><strong>{currentUser?.full_name || "Administrator"}</strong><small>{currentUser?.role || "admin"}</small></div>
         </div>
       </aside>
 
@@ -373,7 +417,7 @@ export default function AdminPanel() {
                         </div>
                       </div>
                       <div>
-                        <strong>{slot.barber_name}</strong>
+                        <strong>{slot.users?.full_name || slot.barber_name}</strong>
                         <small>{booking?.services?.name || slot.note || "Volný termín"}</small>
                       </div>
                       <div>
@@ -436,8 +480,13 @@ export default function AdminPanel() {
                 </select>
               </div>
               <div className="admin-field">
-                <label htmlFor="barber_name">Barber</label>
-                <input id="barber_name" name="barber_name" defaultValue="Číž" required />
+                <label htmlFor="barber_user_id">Barber</label>
+                <select id="barber_user_id" name="barber_user_id" required defaultValue={barbers[0]?.id || ""}>
+                  <option value="" disabled>Vyber barbera</option>
+                  {barbers.map((barber) => (
+                    <option value={barber.id} key={barber.id}>{barber.full_name}</option>
+                  ))}
+                </select>
               </div>
               <div className="admin-field full">
                 <label htmlFor="note">Interní poznámka <span>volitelné</span></label>
@@ -452,6 +501,45 @@ export default function AdminPanel() {
               </button>
             </div>
           </form>
+
+          {currentUser?.can_invite ? (
+            <form className="admin-panel" id="barberi" onSubmit={createBarber}>
+              <div className="admin-panel-header">
+                <div><h2>Nový barber</h2><p>Vytvoří účet a přidá barbera do rezervace</p></div>
+                <span className="admin-panel-icon"><UsersRound size={18} /></span>
+              </div>
+
+              <div className="admin-form-grid">
+                <div className="admin-field full">
+                  <label htmlFor="barber_full_name">Jméno</label>
+                  <input id="barber_full_name" name="full_name" required />
+                </div>
+                <div className="admin-field">
+                  <label htmlFor="barber_email">E-mail</label>
+                  <input id="barber_email" name="email" type="email" required />
+                </div>
+                <div className="admin-field">
+                  <label htmlFor="barber_phone">Telefon</label>
+                  <input id="barber_phone" name="phone" />
+                </div>
+                <div className="admin-field full">
+                  <label htmlFor="barber_profile_image_url">Profilovka URL <span>volitelné</span></label>
+                  <input id="barber_profile_image_url" name="profile_image_url" type="url" placeholder="https://..." />
+                </div>
+                <div className="admin-field full">
+                  <label htmlFor="barber_password">Dočasné heslo</label>
+                  <input id="barber_password" name="password" type="password" minLength={8} required />
+                </div>
+              </div>
+
+              <div className="admin-form-footer">
+                <button className="admin-primary-button" type="submit" disabled={isCreatingBarber}>
+                  {isCreatingBarber ? <RefreshCw className="spin" size={16} /> : <Plus size={16} />}
+                  {isCreatingBarber ? "Vytvářím…" : "Přidat barbera"}
+                </button>
+              </div>
+            </form>
+          ) : null}
         </div>
       </section>
     </main>

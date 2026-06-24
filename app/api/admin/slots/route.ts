@@ -1,8 +1,8 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/utils/auth";
 import { createAdminClient, hasAdminServiceKey } from "@/utils/supabase/admin";
 
-const isAdmin = async () => (await cookies()).get("ciz_admin")?.value === "ok";
+const isAdmin = async () => Boolean(await getCurrentUser());
 
 export async function GET() {
   if (!(await isAdmin())) {
@@ -10,17 +10,29 @@ export async function GET() {
   }
 
   const supabase = createAdminClient();
-  const { data, error } = await supabase
+  const [slotsResult, barbersResult, user] = await Promise.all([
+    supabase
     .from("availability_slots")
-    .select("*, bookings(*, services(name,price_czk,duration_minutes))")
+      .select("*, users:barber_user_id(id,full_name,email,phone,profile_image_url), bookings(*, services(name,price_czk,duration_minutes))")
     .gte("starts_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-    .order("starts_at");
+      .order("starts_at"),
+    supabase
+      .from("users")
+      .select("id,full_name,email,phone,profile_image_url,role,can_invite,is_active")
+      .eq("is_active", true)
+      .order("created_at"),
+    getCurrentUser(),
+  ]);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (slotsResult.error) {
+    return NextResponse.json({ error: slotsResult.error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ slots: data, hasAdminServiceKey });
+  if (barbersResult.error) {
+    return NextResponse.json({ error: barbersResult.error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ slots: slotsResult.data, barbers: barbersResult.data, user, hasAdminServiceKey });
 }
 
 export async function POST(request: Request) {
@@ -43,12 +55,25 @@ export async function POST(request: Request) {
   }
 
   const supabase = createAdminClient();
+  const barberUserId = String(body.barber_user_id || "").trim();
+  const { data: barber, error: barberError } = await supabase
+    .from("users")
+    .select("id,full_name")
+    .eq("id", barberUserId)
+    .eq("is_active", true)
+    .single();
+
+  if (barberError || !barber) {
+    return NextResponse.json({ error: "Vyber barbera." }, { status: 400 });
+  }
+
   const { data, error } = await supabase
     .from("availability_slots")
     .insert({
       starts_at: startsAt.toISOString(),
       ends_at: endsAt.toISOString(),
-      barber_name: String(body.barber_name || "Číž").trim(),
+      barber_user_id: barber.id,
+      barber_name: barber.full_name,
       note: String(body.note || "").trim() || null,
       is_available: true,
     })

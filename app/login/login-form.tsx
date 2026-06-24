@@ -39,10 +39,10 @@ export default function LoginForm() {
         Admin
       </span>
       <h1>Přihlášení</h1>
-      <p className="admin-muted">Výchozí přístup je jméno admin a heslo admin.</p>
+      <p className="admin-muted">Přihlašuje se majitel nebo barber vytvořený v administraci.</p>
       <div className="field">
-        <label htmlFor="username">Jmeno</label>
-        <input id="username" name="username" autoComplete="username" required />
+        <label htmlFor="email">E-mail</label>
+        <input id="email" name="email" type="email" autoComplete="email" required />
       </div>
       <div className="field">
         <label htmlFor="password">Heslo</label>
@@ -51,6 +51,7 @@ export default function LoginForm() {
       <button className="button" type="submit" disabled={isLoading}>
           {isLoading ? "Kontroluju..." : "Přihlásit"}
       </button>
+      <a className="login-helper-link" href="/setup">Založit první účet</a>
       <p className="status error">{error}</p>
     </form>
   );
