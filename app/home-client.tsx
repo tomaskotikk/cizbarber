@@ -1,8 +1,11 @@
 "use client";
 
-import { AnimatePresence, motion, useScroll, useSpring, useTransform } from "framer-motion";
-import { Menu, UserRound, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ArrowDownRight, ArrowUpRight, Menu, X } from "lucide-react";
+import { useLayoutEffect, useRef, useState } from "react";
+import logo from "@/app/img/logo.jpg";
 
 type Service = {
   id: string;
@@ -12,230 +15,319 @@ type Service = {
   duration_minutes: number;
 };
 
-const heroPhotos = [
-  "https://images.unsplash.com/photo-1622288432450-277d0fef5ed6?auto=format&fit=crop&w=1500&q=90",
-  "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=1500&q=90",
-  "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=1500&q=90",
+const gallery = [
+  {
+    index: "01",
+    label: "Preciznost",
+    title: "Střih, který funguje i zítra.",
+    image: "https://images.unsplash.com/photo-1622288432450-277d0fef5ed6?auto=format&fit=crop&w=1800&q=90",
+  },
+  {
+    index: "02",
+    label: "Atmosféra",
+    title: "Klid. Křeslo. Čas jen pro tebe.",
+    image: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=1800&q=90",
+  },
+  {
+    index: "03",
+    label: "Detail",
+    title: "Čisté linie bez kompromisu.",
+    image: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=1800&q=90",
+  },
 ];
 
-const categories = ["Vše", "Vlasy", "Vousy", "Komplet", "Děti"];
 const reviews = [
-  ["Čistá práce, příjemná atmosféra a hlavně střih, který drží tvar i po několika týdnech.", "David K.", "Pánský střih"],
-  ["Rezervace bez volání, žádné čekání a každý detail byl přesně podle domluvy.", "Tomáš M.", "Střih + vousy"],
-  ["Konečně barber, který nejdřív poslouchá a až potom bere strojek do ruky.", "Marek S.", "Konzultace a střih"],
+  {
+    text: "Čistá práce, příjemná atmosféra a střih, který drží tvar i několik týdnů.",
+    name: "David K.",
+    service: "Pánský střih",
+  },
+  {
+    text: "Rezervace bez čekání a každý detail přesně podle domluvy. Určitě přijdu znovu.",
+    name: "Tomáš M.",
+    service: "Střih a vousy",
+  },
+  {
+    text: "Konečně barber, který nejdřív poslouchá a až potom bere strojek do ruky.",
+    name: "Marek S.",
+    service: "Střih na míru",
+  },
 ];
-
-const reveal = {
-  hidden: { opacity: 0, y: 54, filter: "blur(12px)" },
-  visible: { opacity: 1, y: 0, filter: "blur(0px)" },
-};
-
-function getCategory(service: Service) {
-  const name = service.name.toLocaleLowerCase("cs");
-  if (name.includes("dětsk")) return "Děti";
-  if (name.includes("vous") && (name.includes("+") || name.includes("střih"))) return "Komplet";
-  if (name.includes("vous")) return "Vousy";
-  return "Vlasy";
-}
 
 export default function HomeClient({ initialServices }: { initialServices: Service[] }) {
-  const [activePhoto, setActivePhoto] = useState(0);
-  const [activeCategory, setActiveCategory] = useState("Vše");
-  const [openService, setOpenService] = useState<string | null>(initialServices[0]?.id ?? null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const heroRef = useRef<HTMLElement>(null);
-  const atelierRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll();
-  const smoothProgress = useSpring(scrollYProgress, { stiffness: 75, damping: 26, mass: 0.7 });
-  const { scrollYProgress: heroProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
-  const { scrollYProgress: atelierProgress } = useScroll({ target: atelierRef, offset: ["start end", "end start"] });
+  const root = useRef<HTMLElement>(null);
+  const horizontal = useRef<HTMLElement>(null);
+  const track = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const heroCopyY = useTransform(heroProgress, [0, 1], [0, 105]);
-  const heroCopyOpacity = useTransform(heroProgress, [0, 0.78], [1, 0.3]);
-  const heroImageY = useTransform(heroProgress, [0, 1], [0, -76]);
-  const heroImageScale = useTransform(heroProgress, [0, 1], [1, 1.075]);
-  const leftGalleryY = useTransform(atelierProgress, [0, 1], [74, -74]);
-  const middleGalleryY = useTransform(atelierProgress, [0, 1], [16, -105]);
-  const rightGalleryY = useTransform(atelierProgress, [0, 1], [104, -32]);
+  useLayoutEffect(() => {
+    gsap.registerPlugin(ScrollTrigger);
+    const media = gsap.matchMedia();
 
-  const filteredServices = useMemo(
-    () => activeCategory === "Vše" ? initialServices : initialServices.filter((service) => getCategory(service) === activeCategory),
-    [activeCategory, initialServices],
-  );
+    const context = gsap.context(() => {
+      gsap.set(".hero-word", { yPercent: 115 });
+      gsap.set(".hero-meta", { opacity: 0, y: 24 });
+      gsap.set(".hero-support", { opacity: 0, y: 30 });
 
-  useEffect(() => {
-    const interval = window.setInterval(() => setActivePhoto((current) => (current + 1) % heroPhotos.length), 7200);
-    return () => window.clearInterval(interval);
+      const intro = gsap.timeline({ defaults: { ease: "power4.out" } });
+      intro
+        .to(".hero-word", { yPercent: 0, duration: 1.25, stagger: 0.1 })
+        .to(".hero-support", { opacity: 1, y: 0, duration: 0.85, stagger: 0.08 }, "-=0.72")
+        .to(".hero-meta", { opacity: 1, y: 0, duration: 0.8, stagger: 0.08 }, "-=0.62");
+
+      gsap.to(".hero-media-inner", {
+        yPercent: 18,
+        scale: 1.08,
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".cinema-hero",
+          start: "top top",
+          end: "bottom top",
+          scrub: 1.2,
+        },
+      });
+
+      gsap.to(".hero-title", {
+        yPercent: 28,
+        opacity: 0.15,
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".cinema-hero",
+          start: "25% top",
+          end: "bottom top",
+          scrub: 1,
+        },
+      });
+
+      gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((element) => {
+        gsap.from(element, {
+          y: 80,
+          opacity: 0,
+          duration: 1.15,
+          ease: "power4.out",
+          scrollTrigger: {
+            trigger: element,
+            start: "top 88%",
+            once: true,
+          },
+        });
+      });
+
+      gsap.utils.toArray<HTMLElement>("[data-parallax]").forEach((element) => {
+        gsap.fromTo(
+          element,
+          { yPercent: -8 },
+          {
+            yPercent: 8,
+            ease: "none",
+            scrollTrigger: {
+              trigger: element.parentElement,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: 1.1,
+            },
+          },
+        );
+      });
+
+      media.add("(min-width: 821px)", () => {
+        if (!horizontal.current || !track.current) return;
+        const distance = () => Math.max(0, track.current!.scrollWidth - window.innerWidth);
+
+        gsap.to(track.current, {
+          x: () => -distance(),
+          ease: "none",
+          scrollTrigger: {
+            trigger: horizontal.current,
+            start: "top top",
+            end: () => `+=${distance()}`,
+            pin: true,
+            scrub: 1,
+            invalidateOnRefresh: true,
+          },
+        });
+      });
+
+    }, root);
+
+    return () => {
+      media.revert();
+      context.revert();
+    };
   }, []);
 
   return (
-    <main className="site-shell">
-      <motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} />
-      <nav className="nav">
-        <a className="brand" href="#"><span className="brand-mark">ČŽ</span><span>Číž Barber</span></a>
-        <div className={mobileMenuOpen ? "nav-links open" : "nav-links"}>
-          <a href="#sluzby" onClick={() => setMobileMenuOpen(false)}>Služby</a>
-          <a href="#atelier" onClick={() => setMobileMenuOpen(false)}>Ateliér</a>
-          <a href="#recenze" onClick={() => setMobileMenuOpen(false)}>Recenze</a>
-          <a href="#kontakt" onClick={() => setMobileMenuOpen(false)}>Kontakt</a>
-        </div>
-        <div className="nav-actions">
-          <a className="button nav-cta" href="/rezervace">Rezervovat</a>
-          <a className="nav-user" href="/login" aria-label="Přihlášení barbera"><UserRound size={19} /></a>
-          <button className="nav-menu-button" type="button" onClick={() => setMobileMenuOpen((open) => !open)} aria-label="Otevřít menu" aria-expanded={mobileMenuOpen}>
-            {mobileMenuOpen ? <X size={21} /> : <Menu size={21} />}
-          </button>
-        </div>
-      </nav>
+    <main className="cinema-site" ref={root}>
+      <header className="cinema-nav">
+        <a className="cinema-nav-logo" href="#top" aria-label="Číž Barber — úvod">
+          <Image src={logo} alt="Číž Barber" priority />
+        </a>
 
-      <section className="hero" ref={heroRef}>
-        <motion.div className="hero-copy" style={{ y: heroCopyY, opacity: heroCopyOpacity }}>
-          <motion.span className="eyebrow" initial="hidden" animate="visible" variants={reveal} transition={{ duration: 1.25, ease: [0.16, 1, 0.3, 1] }}>
-            Barber shop / Zlín / Od 2026
-          </motion.span>
-          <motion.h1 initial="hidden" animate="visible" variants={reveal} transition={{ duration: 1.45, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}>
-            Číž<br />Barber
-          </motion.h1>
-          <motion.p initial="hidden" animate="visible" variants={reveal} transition={{ duration: 1.4, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}>
-            Precizní střih, čisté kontury a péče, která má vlastní tempo. Přijdeš jako klient, odcházíš upravený do posledního detailu.
-          </motion.p>
-          <motion.div className="hero-actions" initial="hidden" animate="visible" variants={reveal} transition={{ duration: 1.4, delay: 0.32, ease: [0.16, 1, 0.3, 1] }}>
-            <a className="button" href="/rezervace">Vybrat termín</a>
-            <a className="text-link" href="#sluzby">Prohlédnout ceník <span>↓</span></a>
-          </motion.div>
-        </motion.div>
+        <nav className={menuOpen ? "cinema-nav-links open" : "cinema-nav-links"}>
+          <a href="#studio" onClick={() => setMenuOpen(false)}>Naše studio</a>
+          <a href="#sluzby" onClick={() => setMenuOpen(false)}>Naše služby</a>
+          <a href="#kontakt" onClick={() => setMenuOpen(false)}>Kontakt</a>
+        </nav>
 
-        <motion.div className="hero-visual" style={{ y: heroImageY, scale: heroImageScale }}>
-          <div className="hero-photo-stack">
-            {heroPhotos.map((photo, index) => (
-              <motion.div
-                className="hero-photo"
-                key={photo}
-                style={{ backgroundImage: `url(${photo})` }}
-                animate={{ opacity: activePhoto === index ? 1 : 0, scale: activePhoto === index ? 1.03 : 1.105 }}
-                transition={{ duration: 2.1, ease: [0.16, 1, 0.3, 1] }}
-              />
-            ))}
+        <a className="cinema-nav-cta" href="/rezervace">
+          Rezervovat <ArrowUpRight size={16} />
+        </a>
+
+        <button
+          className="cinema-menu"
+          type="button"
+          aria-label={menuOpen ? "Zavřít menu" : "Otevřít menu"}
+          onClick={() => setMenuOpen((value) => !value)}
+        >
+          {menuOpen ? <X /> : <Menu />}
+        </button>
+      </header>
+
+      <section className="cinema-hero" id="top">
+        <div className="hero-media">
+          <div className="hero-media-inner" />
+          <div className="hero-shade" />
+        </div>
+
+        <div className="hero-content">
+          <p className="hero-lead hero-support">Pánské holičství ve Zlíně</p>
+          <div className="hero-title" aria-label="Číž Barber">
+            <div className="hero-line"><span className="hero-word">ČÍŽ <span className="accent">BARBER</span></span></div>
           </div>
-          <div className="hero-caption"><span>01</span><p>Řemeslo bez zkratek.<br />Výsledek bez kompromisu.</p></div>
-          <div className="photo-switcher" aria-label="Výběr fotografie">
-            {heroPhotos.map((_, index) => (
-              <button type="button" className={activePhoto === index ? "photo-dot active" : "photo-dot"} onClick={() => setActivePhoto(index)} key={index} aria-label={`Fotografie ${index + 1}`} />
-            ))}
+          <p className="hero-tagline hero-support">Střih, který má charakter. Precizní práce bez zbytečných řečí.</p>
+        </div>
+
+        <div className="hero-bottom">
+          <p className="hero-meta">Číž Barber · Zlín</p>
+          <a className="hero-meta hero-scroll" href="#studio">
+            Poznej naše studio <ArrowDownRight size={18} />
+          </a>
+          <p className="hero-meta hero-note">Precizní řemeslo.<br />Čistý výsledek.</p>
+        </div>
+      </section>
+
+      <section className="cinema-manifesto" id="studio">
+        <p className="cinema-kicker" data-reveal>01 / Kdo jsme</p>
+        <h1 data-reveal>
+          Dobrý střih nekončí v křesle.
+          <span> Musí fungovat i každý další den.</span>
+        </h1>
+        <div className="manifesto-foot" data-reveal>
+          <p>Nejdřív posloucháme, potom stříháme. Výsledkem je čistý střih, který sedí tobě i tvému běžnému dni.</p>
+          <a className="circle-link" href="/rezervace" aria-label="Rezervovat termín">
+            <ArrowUpRight />
+          </a>
+        </div>
+      </section>
+
+      <section className="cinema-horizontal" ref={horizontal}>
+        <div className="horizontal-track" ref={track}>
+          <article className="horizontal-intro">
+            <span>02 / Naše studio</span>
+            <h2>Prostor pro<br /><em>dobrý detail.</em></h2>
+            <p>Posuň se dál</p>
+          </article>
+
+          {gallery.map((item) => (
+            <article className="horizontal-card" key={item.index}>
+              <div className="horizontal-photo">
+                <div data-parallax style={{ backgroundImage: `url(${item.image})` }} />
+              </div>
+              <div className="horizontal-copy">
+                <span>{item.index} / {item.label}</span>
+                <h3>{item.title}</h3>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="cinema-services" id="sluzby">
+        <div className="services-heading">
+          <p className="cinema-kicker" data-reveal>03 / Služby</p>
+          <h2 data-reveal>Jednoduše.<br /><span>Poctivě.</span></h2>
+        </div>
+
+        <div className="cinema-service-list">
+          {initialServices.slice(0, 4).map((service, index) => (
+            <a className="cinema-service" href="/rezervace" key={service.id} data-reveal>
+              <span className="service-number">{String(index + 1).padStart(2, "0")}</span>
+              <div>
+                <h3>{service.name}</h3>
+                <p>{service.duration_minutes} minut</p>
+              </div>
+              <strong>{service.price_czk} Kč</strong>
+              <span className="service-arrow"><ArrowUpRight /></span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section className="cinema-reviews">
+        <div className="reviews-top">
+          <div data-reveal>
+            <p className="cinema-kicker">04 / Hodnocení klientů</p>
+            <h2>Dobrá práce<br /><span>se pozná.</span></h2>
           </div>
-        </motion.div>
-      </section>
-
-      <div className="ticker-wrap" aria-hidden="true">
-        <div className="ticker">
-          {Array.from({ length: 3 }).map((_, group) => (
-            <div className="ticker-set" key={group}>
-              <span>Přesný fade</span><i /><span>Hot towel</span><i /><span>Čisté kontury</span><i /><span>Styling</span><i /><span>Online rezervace</span><i />
-            </div>
-          ))}
+          <div className="reviews-score" data-reveal>
+            <strong>5,0</strong>
+            <span aria-label="Pět hvězdiček">★★★★★</span>
+            <small>Spokojení klienti</small>
+          </div>
         </div>
-      </div>
 
-      <section className="section services-section" id="sluzby">
-        <motion.div className="section-header" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.25 }} variants={reveal} transition={{ duration: 1.25, ease: [0.16, 1, 0.3, 1] }}>
-          <div><span className="section-kicker">Ceník služeb</span><h2>Vyber si péči podle sebe.</h2></div>
-          <p>Každá návštěva začíná krátkou konzultací. Cena je jasná předem a čas v kalendáři patří jen tobě.</p>
-        </motion.div>
-
-        <div className="service-tabs" role="tablist" aria-label="Kategorie služeb">
-          {categories.map((category) => (
-            <button className={activeCategory === category ? "active" : ""} type="button" role="tab" aria-selected={activeCategory === category} onClick={() => setActiveCategory(category)} key={category}>
-              {category}
-            </button>
+        <div className="cinema-review-grid">
+          {reviews.map((review, index) => (
+            <article className="cinema-review" data-reveal key={review.name}>
+              <div className="review-index">0{index + 1}</div>
+              <div className="review-stars">★★★★★</div>
+              <blockquote>„{review.text}“</blockquote>
+              <footer>
+                <strong>{review.name}</strong>
+                <span>{review.service}</span>
+              </footer>
+            </article>
           ))}
         </div>
 
-        <motion.div className="service-list" layout>
-          <AnimatePresence mode="popLayout">
-            {filteredServices.map((service, index) => {
-              const isOpen = openService === service.id;
-              return (
-                <motion.article className={isOpen ? "service-row open" : "service-row"} key={service.id} layout initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} transition={{ duration: 0.65, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }} onMouseEnter={() => setOpenService(service.id)}>
-                  <button className="service-trigger" type="button" onClick={() => setOpenService(isOpen ? null : service.id)} aria-expanded={isOpen}>
-                    <span className="service-index">{String(index + 1).padStart(2, "0")}</span>
-                    <span className="service-name"><strong>{service.name}</strong><small>{getCategory(service)}</small></span>
-                    <span className="service-meta"><strong>{service.price_czk} Kč</strong><small>{service.duration_minutes} min</small></span>
-                    <span className="service-toggle">{isOpen ? "−" : "+"}</span>
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {isOpen ? (
-                      <motion.div className="service-detail" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}>
-                        <p>{service.description}</p><a href="/rezervace">Rezervovat tuto službu <span>→</span></a>
-                      </motion.div>
-                    ) : null}
-                  </AnimatePresence>
-                </motion.article>
-              );
-            })}
-          </AnimatePresence>
-        </motion.div>
-      </section>
-
-      <section className="section atelier-section" id="atelier" ref={atelierRef}>
-        <motion.div className="atelier-copy" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={reveal} transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}>
-          <span className="section-kicker">Ateliér</span><h2>Prostor, kde se na detail nespěchá.</h2>
-        </motion.div>
-        <div className="gallery-strip">
-          <motion.div className="gallery-frame gallery-small" style={{ y: leftGalleryY }}><div style={{ backgroundImage: "url(https://images.unsplash.com/photo-1599351431613-18ef1fdd27e1?auto=format&fit=crop&w=1000&q=88)" }} /><span>01 / Detail</span></motion.div>
-          <motion.div className="gallery-frame gallery-main" style={{ y: middleGalleryY }}><div style={{ backgroundImage: "url(https://images.unsplash.com/photo-1588771930296-88c2cb03f386?auto=format&fit=crop&w=1100&q=88)" }} /><span>02 / Atmosféra</span></motion.div>
-          <motion.div className="gallery-frame gallery-small" style={{ y: rightGalleryY }}><div style={{ backgroundImage: "url(https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=1000&q=88)" }} /><span>03 / Řemeslo</span></motion.div>
+        <div className="reviews-action" data-reveal>
+          <p>Chceš si udělat vlastní názor?</p>
+          <a href="/rezervace">Rezervovat termín <ArrowUpRight /></a>
         </div>
       </section>
 
-      <section className="experience-section">
-        <div className="experience-intro"><span className="section-kicker">Více než střih</span><h2>Od rezervace až po poslední tah břitvou.</h2></div>
-        <div className="experience-grid">
-          {[
-            ["01", "SMS připomínka", "Den před návštěvou ti připomeneme termín. Hlava může řešit důležitější věci."],
-            ["02", "Konzultace v ceně", "Tvar hlavy, růst vlasů i běžný styling. Nejdřív plán, potom střih."],
-            ["03", "Doporučení na doma", "Ukážeme ti, jak výsledek udržet bez deseti produktů a půl hodiny před zrcadlem."],
-          ].map(([number, title, copy], index) => (
-            <motion.article key={title} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 1, delay: index * 0.13, ease: [0.16, 1, 0.3, 1] }}>
-              <span>{number}</span><h3>{title}</h3><p>{copy}</p>
-            </motion.article>
-          ))}
+      <footer className="cinema-footer" id="kontakt">
+        <div className="footer-brand" data-reveal>
+          <div>
+            <h2>Číž Barber</h2>
+            <p>Pánské holičství ve Zlíně</p>
+          </div>
+          <div className="footer-logo">
+            <Image src={logo} alt="Logo Číž Barber" />
+          </div>
         </div>
-      </section>
-
-      <section className="reviews-section" id="recenze">
-        <div className="reviews-heading">
-          <div><span className="section-kicker">Ohlasy klientů</span><h2>Dobrá práce se vrací.</h2></div>
-          <div className="rating-lockup"><strong>5,0</strong><span>★★★★★</span><small>Hodnocení klientů</small></div>
+        <div className="footer-grid">
+          <div>
+            <span>Kontakt</span>
+            <a href="tel:+420702155123">+420 702 155 123</a>
+            <a href="mailto:cizkuba07@gmail.com">cizkuba07@gmail.com</a>
+          </div>
+          <div>
+            <span>Sleduj nás</span>
+            <a href="https://instagram.com/J.ciz" target="_blank" rel="noreferrer">Instagram ↗</a>
+          </div>
+          <div>
+            <span>Otevírací doba</span>
+            <p>Po–Pá / 8:00–17:00</p>
+            <p>Zlín, Česká republika</p>
+          </div>
         </div>
-        <div className="review-grid">
-          {reviews.map(([text, name, service], index) => (
-            <motion.blockquote key={name} initial={{ opacity: 0, y: 38 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.35 }} transition={{ duration: 1, delay: index * 0.12, ease: [0.16, 1, 0.3, 1] }}>
-              <div className="review-stars">★★★★★</div><p>„{text}“</p><footer><strong>{name}</strong><span>{service}</span></footer>
-            </motion.blockquote>
-          ))}
+        <div className="footer-bottom">
+          <span>© 2026 Číž Barber</span>
+          <a href="/admin">Admin</a>
+          <a href="#top">Nahoru ↑</a>
         </div>
-        <p className="review-note">Ukázkový obsah recenzí. Před spuštěním propojíme skutečné Google hodnocení.</p>
-      </section>
-
-      <section className="booking-teaser">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.35 }} variants={reveal} transition={{ duration: 1.35, ease: [0.16, 1, 0.3, 1] }}>
-          <span className="section-kicker">Online rezervace</span><h2>Tvůj čas.<br />Tvoje křeslo.</h2>
-          <p>Vyber službu, barbera a volný termín. Hotovo za pár kliknutí.</p>
-          <a className="button light-button" href="/rezervace">Otevřít rezervaci</a>
-        </motion.div>
-      </section>
-
-      <section className="section contact-section" id="kontakt">
-        <span className="section-kicker">Kontakt</span><h2>Najdeš nás v centru Zlína.</h2>
-        <div className="contact">
-          <a className="contact-item" href="tel:+420702155123"><span>Telefon</span><strong>702 155 123</strong></a>
-          <a className="contact-item" href="mailto:cizkuba07@gmail.com"><span>E-mail</span><strong>cizkuba07@gmail.com</strong></a>
-          <a className="contact-item" href="https://instagram.com/J.ciz" target="_blank" rel="noreferrer"><span>Instagram</span><strong>@J.ciz</strong></a>
-          <div className="contact-item"><span>Rezervace</span><strong>Po–Pá / 8:00–17:00</strong></div>
-        </div>
-      </section>
-
-      <footer className="footer"><strong>Číž Barber</strong><span>© 2026 Všechna práva vyhrazena</span><a href="/admin">Admin</a></footer>
+      </footer>
     </main>
   );
 }

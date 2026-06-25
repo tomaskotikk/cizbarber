@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { FormEvent, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import logo from "@/app/img/logo.jpg";
 
 type Service = {
   id: string;
@@ -194,8 +196,8 @@ export default function BookingFlow({
         >
           ←
         </button>
-        <a className="booking-brand" href="/">
-          Číž Barber
+        <a className="booking-brand" href="/" aria-label="Číž Barber — zpět na úvod">
+          <Image src={logo} alt="Číž Barber" priority />
         </a>
         <a className="round-control" href="/" aria-label="Zavřít">
           ×
@@ -459,10 +461,10 @@ export default function BookingFlow({
 
         <aside className="booking-summary">
           <div className="summary-brand">
-            <span>CŽ</span>
+            <span><Image src={logo} alt="" /></span>
             <div>
               <strong>Číž Barber</strong>
-              <small>Zlín</small>
+              <small>Pánské holičství · Zlín</small>
             </div>
           </div>
           <div className="summary-lines">
