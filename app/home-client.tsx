@@ -3,7 +3,7 @@
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ArrowDownRight, ArrowUpRight, Menu, X } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Menu, UserRound, X } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 import logo from "@/app/img/logo.jpg";
 
@@ -169,9 +169,14 @@ export default function HomeClient({ initialServices }: { initialServices: Servi
           <a href="#kontakt" onClick={() => setMenuOpen(false)}>Kontakt</a>
         </nav>
 
-        <a className="cinema-nav-cta" href="/rezervace">
-          Rezervovat <ArrowUpRight size={16} />
-        </a>
+        <div className="cinema-nav-actions">
+          <a className="cinema-nav-cta" href="/rezervace">
+            Rezervovat <ArrowUpRight size={16} />
+          </a>
+          <a className="cinema-nav-user" href="/login" aria-label="Přihlásit se do administrace" title="Administrace">
+            <UserRound size={18} />
+          </a>
+        </div>
 
         <button
           className="cinema-menu"

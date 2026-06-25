@@ -32,7 +32,12 @@ export async function GET() {
     return NextResponse.json({ error: barbersResult.error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ slots: slotsResult.data, barbers: barbersResult.data, user, hasAdminServiceKey });
+  const slots = (slotsResult.data ?? []).map((slot) => ({
+    ...slot,
+    bookings: slot.bookings ? (Array.isArray(slot.bookings) ? slot.bookings : [slot.bookings]) : [],
+  }));
+
+  return NextResponse.json({ slots, barbers: barbersResult.data, user, hasAdminServiceKey });
 }
 
 export async function POST(request: Request) {

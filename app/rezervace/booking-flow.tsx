@@ -213,7 +213,7 @@ export default function BookingFlow({
         ))}
       </div>
 
-      <div className="booking-workspace">
+      <div className={step === "details" ? "booking-workspace with-summary" : "booking-workspace without-summary"}>
         <section className="booking-main">
           <AnimatePresence mode="wait">
             {step === "service" ? (
@@ -358,7 +358,11 @@ export default function BookingFlow({
                           key={key}
                         >
                           <span>{day.getDate()}</span>
-                          {isAvailable ? <small>{availableCount} {availableCount === 1 ? "čas" : "časy"}</small> : null}
+                          {isAvailable ? (
+                            <small>{availableCount} {availableCount === 1 ? "volný čas" : "volné časy"}</small>
+                          ) : isCurrentMonth && !isPast ? (
+                            <small>Není volno</small>
+                          ) : null}
                         </button>
                       );
                     })}
@@ -459,33 +463,35 @@ export default function BookingFlow({
           </AnimatePresence>
         </section>
 
-        <aside className="booking-summary">
-          <div className="summary-brand">
-            <span><Image src={logo} alt="" /></span>
-            <div>
-              <strong>Číž Barber</strong>
-              <small>Pánské holičství · Zlín</small>
+        {step === "details" ? (
+          <aside className="booking-summary">
+            <div className="summary-brand">
+              <span><Image src={logo} alt="" /></span>
+              <div>
+                <strong>Číž Barber</strong>
+                <small>Kontrola rezervace</small>
+              </div>
             </div>
-          </div>
-          <div className="summary-lines">
-            <div>
-              <span>Služba</span>
-              <strong>{service?.name || "Zatím nevybráno"}</strong>
+            <div className="summary-lines">
+              <div>
+                <span>Služba</span>
+                <strong>{service?.name}</strong>
+              </div>
+              <div>
+                <span>Barber</span>
+                <strong>{selectedBarber?.full_name}</strong>
+              </div>
+              <div>
+                <span>Termín</span>
+                <strong>{slot ? `${formatDay(formatDayKey(slot.starts_at))}, ${formatTime(slot.starts_at)}` : ""}</strong>
+              </div>
             </div>
-            <div>
-              <span>Barber</span>
-              <strong>{selectedBarber?.full_name || "Zatím nevybráno"}</strong>
+            <div className="summary-total">
+              <span>Celkem</span>
+              <strong>{service ? `${service.price_czk} Kč` : "—"}</strong>
             </div>
-            <div>
-              <span>Termín</span>
-              <strong>{slot ? `${formatDay(formatDayKey(slot.starts_at))}, ${formatTime(slot.starts_at)}` : "Zatím nevybráno"}</strong>
-            </div>
-          </div>
-          <div className="summary-total">
-            <span>Celkem</span>
-            <strong>{service ? `${service.price_czk} Kč` : "—"}</strong>
-          </div>
-        </aside>
+          </aside>
+        ) : null}
       </div>
     </main>
   );
